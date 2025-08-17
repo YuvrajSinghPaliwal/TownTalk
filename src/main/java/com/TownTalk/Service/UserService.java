@@ -2,30 +2,42 @@ package com.TownTalk.Service;
 
 import java.util.List;
 
+
+
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import com.TownTalk.Entity.User;
+import com.TownTalk.Entity.Users;
 import com.TownTalk.Repository.UserRepository;
 
 @Service
 public class UserService {
     @Autowired
     private UserRepository userRepository;
+    
+   
+    private BCryptPasswordEncoder encoder = new BCryptPasswordEncoder(12);
 
-    public User findById(Long id) {
+    public Users findById(Long id) {
         return userRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("User not found with id " + id));
     }
 
-    public User save(User user) {
-        // Add any business rules/validations here
+    public Users save(Users user) {
+        
+    	user.setPassword(encoder.encode(user.getPassword()));
+    	
+    	
         return userRepository.save(user);
     }
 
-    public User update(User user) {
+    public Users update(Users user) {
         if (!userRepository.existsById(user.getId())) {
             throw new RuntimeException("User not found with id " + user.getId());
+        }
+        else{
+        	user.setPassword(encoder.encode(user.getPassword()));
         }
         return userRepository.save(user);
     }
@@ -34,7 +46,7 @@ public class UserService {
         userRepository.deleteById(id);
     }
 
-    public List<User> findAll() {
+    public List<Users> findAll() {
         return userRepository.findAll();
     }
 }

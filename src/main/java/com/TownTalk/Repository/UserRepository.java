@@ -3,12 +3,12 @@ package com.TownTalk.Repository;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
-import com.TownTalk.Entity.User;
+import com.TownTalk.Entity.Users;
 
 @Repository
-public interface UserRepository extends JpaRepository<User, Long> {
+public interface UserRepository extends JpaRepository<Users, Long> {
     
-    User findByUsername(String username);
+    Users findByUsername(String username);
     
     boolean existsByUsername(String username);
 }
