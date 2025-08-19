@@ -13,7 +13,7 @@ import jakarta.persistence.Table;
 @Table(name = "likes")
 public class Like {
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     private Long likes;

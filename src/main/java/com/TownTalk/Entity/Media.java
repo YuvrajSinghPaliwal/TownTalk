@@ -10,7 +10,7 @@ import jakarta.persistence.Lob;
 public class Media {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     private String type; // e.g., "image", "video"
