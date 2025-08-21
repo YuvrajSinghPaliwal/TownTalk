@@ -1,6 +1,7 @@
 package com.TownTalk.Controller;
 
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -8,6 +9,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -26,65 +28,66 @@ import com.TownTalk.Service.UserService;
 @RestController
 @RequestMapping("/users")
 public class UserController {
-	
+
     @Autowired
     private UserService userService;
-    
+
     @Autowired
     private AuthenticationManager authenticationManager;
-    
+
     @Autowired
     private JwtService jwtService;
-    
-    @GetMapping()
-    public List<Users> getUser() {
-        return userService.findAll();
-    }
-    
-    @PostMapping("/login")
-    public ResponseEntity<String> login(@RequestBody LoginDTO user) {
-    	
-    	//we are giving email but it is still authenticating using spring security internal using username and password
-    	//so we need to deepdive in spring security filter for better control
-    	Authentication auth=authenticationManager
-    			.authenticate(new UsernamePasswordAuthenticationToken(user.getUEmail(),user.getPassword()));
-    	
-    	if(auth.isAuthenticated()) {
-    		String token =jwtService.generateToken(user.getUEmail());
-    		return new ResponseEntity<>(token,HttpStatus.OK);
-    	}
-    	else {
-    		return new ResponseEntity<>("Failed autherization",HttpStatus.UNAUTHORIZED);
-    	}
-    	
-    	
-//    	Users users = userService.authenticate(user.getUEmail(), user.getPassword());
-//        if (users == null) {
-//            return new ResponseEntity<>(null,HttpStatus.UNAUTHORIZED);
-//        }
-//        // generate token or session here if applicable
-//        return ResponseEntity.ok(users);
-    }
-    
 
-    @GetMapping("/{id}")
-    public Users getUser(@PathVariable Long id) {
-        return userService.findById(id);
+    @PostMapping("/login")
+    public ResponseEntity<?> login(@RequestBody LoginDTO user) {
+        try {
+            Authentication auth = authenticationManager.authenticate(
+                new UsernamePasswordAuthenticationToken(user.getUEmail(), user.getPassword())
+            );
+            if (auth.isAuthenticated()) {
+                String token = jwtService.generateToken(user.getUEmail());
+                return ResponseEntity.ok(Map.of("jwt", token));
+            }
+        } catch (AuthenticationException e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid credentials");
+        }
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Unauthorized");
     }
 
     @PostMapping("/register")
-    public Users createUser(@RequestBody RegisterDTO user) {
-        return userService.save(user);
+    public ResponseEntity<?> createUser(@RequestBody RegisterDTO user) {
+        try {
+            Users createdUser = userService.save(user);
+            return ResponseEntity.status(HttpStatus.CREATED).body(createdUser);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Error creating user");
+        }
+    }
+
+    @GetMapping("/")
+    public List<Users> getUsers() {
+        return userService.findAll();
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<Users> getUser(@PathVariable Long id) {
+        Users user = userService.findById(id);
+        if (user == null) {
+            return ResponseEntity.notFound().build();
+        }
+        return ResponseEntity.ok(user);
     }
 
     @PutMapping("/{id}")
-    public Users updateUser(@RequestBody Users user) {
-        
-        return userService.update(user);
+    public ResponseEntity<Users> updateUser(@PathVariable Long id, @RequestBody Users user) {
+        user.setUId(id);
+        Users updatedUser = userService.update(user);
+        return ResponseEntity.ok(updatedUser);
     }
 
     @DeleteMapping("/{id}")
-    public void deleteUser(@PathVariable Long id) {
+    public ResponseEntity<Void> deleteUser(@PathVariable Long id) {
         userService.delete(id);
+        return ResponseEntity.noContent().build();
     }
 }
